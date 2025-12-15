@@ -28,7 +28,7 @@ public class GamePanel extends JPanel implements Runnable {
     public final Player player = new Player(this, keyH);
     private final GameWorld world = new GameWorld(this, player);
     private final ScrollingBackground bg =
-            new ScrollingBackground("/background/4.png", HEIGHT, 4);
+            new ScrollingBackground("/background/sky.png", HEIGHT, 4);
 
     public ExplosionAssets explosionAssets; // just a reference if needed
 

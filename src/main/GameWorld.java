@@ -293,7 +293,7 @@ public class GameWorld {
 
                     if (e.isDead()) {
                         if (e instanceof BossEnemy) {
-                            explosions.add(new Explosion(e.x, e.y, e.width, e.height, ExplosionAssets.bossExplosion));
+                            explosions.add(new Explosion(e.x, e.y, e.width, e.height, ExplosionAssets.normalExplosion));
                             onBossDefeated();
                         } else {
                             explosions.add(new Explosion(e.x, e.y, e.width, e.height, ExplosionAssets.normalExplosion));
@@ -321,6 +321,7 @@ public class GameWorld {
             Enemy e = enemies.get(i);
             if (player.getBounds().intersects(e.getBounds())) {
                 enemies.remove(i);
+                explosions.add(new Explosion(e.x, e.y, e.width, e.height, ExplosionAssets.normalExplosion));
                 gp.playSE(5);
                 player.takeDamage(10);
                 if (player.isDead()) {

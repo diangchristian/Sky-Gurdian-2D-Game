@@ -10,7 +10,6 @@ public class ExplosionAssets {
 
     public static void load() {
         normalExplosion = loadExplosion("/explosions/basic/", 11, 32, 32);
-        bossExplosion = loadExplosion("/explosions/boss/", 11, 128, 128);
     }
 
     private static BufferedImage[] loadExplosion(String path, int count, int fallbackWidth, int fallbackHeight) {

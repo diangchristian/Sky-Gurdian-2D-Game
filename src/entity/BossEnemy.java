@@ -56,12 +56,13 @@ public class BossEnemy extends Enemy {
 
     private void loadImages() {
         if (images == null) {
-            images = new BufferedImage[4];
+            images = new BufferedImage[5];
             try {
                 images[0] = ImageIO.read(getClass().getResourceAsStream("/enemies/boss.png"));
                 images[1] = ImageIO.read(getClass().getResourceAsStream("/enemies/boss2.png"));
                 images[2] = ImageIO.read(getClass().getResourceAsStream("/enemies/boss3.png"));
                 images[3] = ImageIO.read(getClass().getResourceAsStream("/enemies/boss4.png"));
+                images[4] = ImageIO.read(getClass().getResourceAsStream("/enemies/archie.png"));
             } catch (IOException | NullPointerException e) {
                 for (int i = 0; i < images.length; i++)
                     images[i] = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
@@ -71,12 +72,13 @@ public class BossEnemy extends Enemy {
 
     private void loadBulletImages() {
         if (bulletImages == null) {
-            bulletImages = new BufferedImage[4];
+            bulletImages = new BufferedImage[5];
             try {
                 bulletImages[0] = ImageIO.read(getClass().getResourceAsStream("/bullets/boss1.png"));
                 bulletImages[1] = ImageIO.read(getClass().getResourceAsStream("/bullets/boss2.png"));
                 bulletImages[2] = ImageIO.read(getClass().getResourceAsStream("/bullets/boss3.png"));
                 bulletImages[3] = ImageIO.read(getClass().getResourceAsStream("/bullets/boss4.png"));
+                bulletImages[4] = ImageIO.read(getClass().getResourceAsStream("/bullets/archie.png"));
             } catch (IOException | NullPointerException e) {
                 for (int i = 0; i < bulletImages.length; i++)
                     bulletImages[i] = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
