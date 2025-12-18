@@ -1,19 +1,13 @@
 package main;
 
 import entity.Player;
-import entity.Bullet;
-import entity.Enemy;
-import entity.BasicEnemy;
-import entity.FastEnemy;
-import entity.BossEnemy;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.Random;
 
 public class GamePanel extends JPanel implements Runnable {
 
+    // 🎮 Virtual game resolution (DO NOT CHANGE)
     public static final int WIDTH = 800;
     public static final int HEIGHT = 700;
 
@@ -27,13 +21,17 @@ public class GamePanel extends JPanel implements Runnable {
 
     public final Player player = new Player(this, keyH);
     private final GameWorld world = new GameWorld(this, player);
+
     private final ScrollingBackground bg =
             new ScrollingBackground("/background/sky.png", HEIGHT, 4);
 
-    public ExplosionAssets explosionAssets; // just a reference if needed
+    // 💥 Explosion assets (RESTORED)
+    public ExplosionAssets explosionAssets = new ExplosionAssets();
 
     public UI ui = world.ui;
+
     private int loadingTimer = 120;
+
     public Sound music = new Sound();
     public Sound se = new Sound();
 
@@ -50,6 +48,8 @@ public class GamePanel extends JPanel implements Runnable {
         addKeyListener(keyH);
         addMouseListener(mouseH);
         addMouseMotionListener(mouseH);
+
+        // 💥 LOAD EXPLOSIONS
         explosionAssets.load();
     }
 
@@ -65,6 +65,7 @@ public class GamePanel extends JPanel implements Runnable {
 
         while (gameThread != null) {
             long now = System.nanoTime();
+
             if (now - lastTime >= drawInterval) {
                 update();
                 repaint();
@@ -80,39 +81,30 @@ public class GamePanel extends JPanel implements Runnable {
             case LOADING -> {
                 if (--loadingTimer <= 0) {
                     gameState = GameState.MENU;
-
-                    // 🔊 START MENU MUSIC HERE (ONCE)
                     music.switchMusic(MENU_MUSIC);
                 }
             }
 
             case MENU -> {
-                // nothing needed here
+                // Menu logic if needed
             }
 
             case PLAYING -> {
-                // when starting the game
-
-
                 bg.update(HEIGHT);
                 world.update();
             }
 
             case GAME_OVER -> {
-                // Check if SPACE is pressed to restart
                 if (keyH.spaceBarPressed) {
-                    resetGame();      // your existing reset method
-                    keyH.spaceBarPressed = false; // prevent immediate re-trigger
+                    resetGame();
+                    keyH.spaceBarPressed = false;
                 }
             }
         }
     }
 
-
-
     public void gameOver() {
         gameState = GameState.GAME_OVER;
-
         music.switchMusic(GAMEOVER_MUSIC);
     }
 
@@ -132,16 +124,30 @@ public class GamePanel extends JPanel implements Runnable {
         super.paintComponent(g);
         Graphics2D g2 = (Graphics2D) g;
 
-        // Draw background and world for PLAYING and PAUSED states
+        // Enable smooth scaling
+        g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
+                RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+
+        // Calculate scale
+        double scaleX = getWidth() / (double) WIDTH;
+        double scaleY = getHeight() / (double) HEIGHT;
+        double scale = Math.min(scaleX, scaleY); // keep aspect ratio
+
+        // Center the game
+        int xOffset = (int) ((getWidth() - WIDTH * scale) / 2);
+        int yOffset = (int) ((getHeight() - HEIGHT * scale) / 2);
+
+        g2.translate(xOffset, yOffset);
+        g2.scale(scale, scale);
+
+        // 🎮 Draw everything using original coordinates
         if (gameState == GameState.PLAYING || gameState == GameState.PAUSED) {
-            bg.draw(g2, WIDTH, HEIGHT);  // draw background
-            world.draw(g2);              // draw player, enemies, bullets
+            bg.draw(g2, WIDTH, HEIGHT);
+            world.draw(g2);
         }
 
-        // Draw UI overlays (HUD, pause button, etc.)
         ui.draw(g2);
 
-        // Draw GAME OVER overlay if player is dead
         if (player.isDead()) {
             ui.drawGameOver(g2);
         }
@@ -149,6 +155,37 @@ public class GamePanel extends JPanel implements Runnable {
         g2.dispose();
     }
 
+
+    public double getScale() {
+        double scaleX = getWidth() / (double) WIDTH;
+        double scaleY = getHeight() / (double) HEIGHT;
+        return Math.min(scaleX, scaleY);
+    }
+
+    public int getMouseX(int rawX) {
+        return (int) (rawX / getScale());
+    }
+
+    public int getMouseY(int rawY) {
+        return (int) (rawY / getScale());
+    }
+
+
+    public int getOffsetX() {
+        return (int) ((getWidth() - WIDTH * getScale()) / 2);
+    }
+
+    public int getOffsetY() {
+        return (int) ((getHeight() - HEIGHT * getScale()) / 2);
+    }
+
+    public int screenToGameX(int screenX) {
+        return (int) ((screenX - getOffsetX()) / getScale());
+    }
+
+    public int screenToGameY(int screenY) {
+        return (int) ((screenY - getOffsetY()) / getScale());
+    }
 
 
 }

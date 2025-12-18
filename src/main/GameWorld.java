@@ -39,9 +39,10 @@ public class GameWorld {
     private final int postBossDelay = 120;
     private int scoreForNextBoss = 150;
 
-    // Game start
-    private boolean firstTimeStart = true;
-    private int startReadyTimer = 90;
+    // Game start sequence
+    private StartPhase startPhase = StartPhase.TUTORIAL;
+    private int tutorialTimer = 240; // 4 seconds
+    private int getReadyTimer = 60;   // 1 second
 
     public UI ui;
     public int score = 0;
@@ -54,21 +55,41 @@ public class GameWorld {
 
     // ========================= UPDATE =========================
     public void update() {
+        ui.update();
+        // -------- GAME START FLOW --------
+        if (startPhase != StartPhase.DONE) {
 
-        // -------- GAME START (GET READY) --------
-        if (firstTimeStart) {
-            ui.setGetReadyText("GET READY");
-            startReadyTimer--;
+            // ----- TUTORIAL FIRST -----
+            if (startPhase == StartPhase.TUTORIAL) {
+                ui.setTutorialText(
+                        "Move: WASD / Arrow Keys\n" +
+                                "Shoot: SPACE\n" +
+                                "Avoid enemies and survive!"
+                );
 
-            if (startReadyTimer <= 0) {
-                firstTimeStart = false;
-                ui.setGetReadyText("");
-                spawningEnabled = true;
-                spawnTimer = getSpawnDelay();
-
-                gp.music.switchMusic(gp.GAME_MUSIC);
+                tutorialTimer--;
+                if (tutorialTimer <= 0) {
+                    startPhase = StartPhase.GET_READY;
+                    ui.clearTutorial();
+                }
+                return;
             }
-            return;
+
+            // ----- GET READY SECOND -----
+            if (startPhase == StartPhase.GET_READY) {
+                ui.setGetReadyText("GET READY");
+
+                getReadyTimer--;
+                if (getReadyTimer <= 0) {
+                    ui.setGetReadyText("");
+                    startPhase = StartPhase.DONE;
+
+                    spawningEnabled = true;
+                    spawnTimer = getSpawnDelay();
+                    gp.music.switchMusic(gp.GAME_MUSIC);
+                }
+                return;
+            }
         }
 
         // -------- BOSS PRE-SPAWN --------
@@ -78,7 +99,6 @@ public class GameWorld {
 
             if (bossPreSpawnTimer == 60) {
                 gp.music.fadeTo(gp.BOSS_MUSIC, 1000);
-
             }
 
             if (bossPreSpawnTimer <= 0) {
@@ -129,23 +149,10 @@ public class GameWorld {
     public void draw(Graphics2D g2) {
         player.draw(g2);
 
-        for (int i = 0; i < bullets.size(); i++) {
-            bullets.get(i).draw(g2);
-        }
-
-        for (int i = 0; i < enemies.size(); i++) {
-            enemies.get(i).draw(g2);
-        }
-
-        for (int i = 0; i < explosions.size(); i++) {
-            explosions.get(i).draw(g2);
-        }
-
-        for (int i = 0; i < pickups.size(); i++) {
-            pickups.get(i).draw(g2);
-        }
-
-
+        for (Bullet b : bullets) b.draw(g2);
+        for (Enemy e : enemies) e.draw(g2);
+        for (Explosion exp : explosions) exp.draw(g2);
+        for (Pickup p : pickups) p.draw(g2);
     }
 
     // ========================= SHOOTING =========================
@@ -170,7 +177,7 @@ public class GameWorld {
     // ========================= DIFFICULTY =========================
     private void updateDifficulty() {
         if (score >= scoreForNextDifficulty) {
-            difficultyLevel++;
+            difficultyLevel += 3;
             scoreForNextDifficulty += difficultyLevel * 250;
         }
     }
@@ -255,7 +262,6 @@ public class GameWorld {
         ));
 
         gp.music.fadeTo(gp.GAME_MUSIC, 1000);
-
     }
 
     private void updatePickups() {
@@ -271,8 +277,6 @@ public class GameWorld {
             return p.isOffScreen();
         });
     }
-
-
 
     // ========================= COLLISIONS =========================
     private void checkCollisions() {
@@ -300,9 +304,9 @@ public class GameWorld {
                         }
 
                         if (!(e instanceof BossEnemy)) {
-                            int dropChance = 15; // %
+                            int dropChance = 15;
                             if (random.nextInt(100) < dropChance) {
-                                pickups.add(new HealthPickup((int) e.x, (int)e.y, gp));
+                                pickups.add(new HealthPickup((int) e.x, (int) e.y, gp));
                             }
                         }
 
@@ -357,7 +361,6 @@ public class GameWorld {
         explosions.clear();
         pickups.clear();
 
-
         score = 0;
         difficultyLevel = 1;
         scoreForNextDifficulty = 100;
@@ -370,12 +373,17 @@ public class GameWorld {
         spawnTimer = baseSpawnDelay;
         spawnDelayTimer = 120;
 
-        firstTimeStart = true;
-        startReadyTimer = 90;
+        startPhase = StartPhase.TUTORIAL;
+        tutorialTimer = 240;
+        getReadyTimer = 60;
 
         player.setDefaultValues();
 
         gp.music.switchMusic(gp.GAME_MUSIC);
+    }
 
+    // ========================= START PHASE ENUM =========================
+    private enum StartPhase {
+        TUTORIAL, GET_READY, DONE
     }
 }
