@@ -14,11 +14,12 @@ public class Bullet {
     protected BufferedImage image;
 
     // Constructor with optional image
-    public Bullet(double x, double y, double dx, double dy, BufferedImage img) {
+    public Bullet(double x, double y, double dx, double dy, double speed, BufferedImage img) {
         this.x = x;
         this.y = y;
         this.dx = dx;
         this.dy = dy;
+        this.speed = speed;
 
         if (img != null) {
             this.image = img;
@@ -29,8 +30,9 @@ public class Bullet {
         }
     }
 
+
     public Bullet(double x, double y) { // default player bullet
-        this(x, y, 0, -1, null);
+        this(x, y, 0, -1, 15, null);
     }
 
     private void loadDefaultImage() {

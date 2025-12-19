@@ -9,7 +9,7 @@ public class BossBullet extends Bullet {
     private static final int BULLET_SIZE = 30; // same as player bullet
 
     public BossBullet(double x, double y, double dx, double dy, BufferedImage image) {
-        super(x, y, dx, dy, image);
+        super(x, y, dx, dy, 15, image);
 
         // Fixed size for consistency with player bullets
         this.width = BULLET_SIZE;

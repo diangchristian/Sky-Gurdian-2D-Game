@@ -14,8 +14,16 @@ public class Player {
     public final int width = 80;
     public final int height = 80;
     public int health = 100; // remove final so it can decrease
+    public int bulletSpeed = 10;
+    public final double maxBulletSpeed = 40;
+    // Shield
+    public boolean shieldActive = false;
+    public int shieldHP = 0;
+    public int maxShieldHP = 100;
+    private int shieldTimer = 0;
 
     private BufferedImage plane;
+    private BufferedImage shield;
 
     GamePanel gp;
     KeyHandler keyH;
@@ -36,6 +44,7 @@ public class Player {
     public void getPlayerImage(){
         try{
             plane = ImageIO.read(getClass().getResourceAsStream("/mainplane.png"));
+            shield = ImageIO.read(getClass().getResource("/shield.png"));
         }catch(IOException e){
             e.printStackTrace();
             plane = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
@@ -60,14 +69,31 @@ public class Player {
     }
 
     public Bullet shoot() {
-        double startX = x + width / 2.0 - 22; // center bullet
-        double startY = y;                    // top of plane
-        return new Bullet(startX, startY);
+        return new Bullet(
+                x + width / 2 - 24,
+                y,
+                0,
+                -1,
+                bulletSpeed,
+                null
+        );
     }
 
+
     public void takeDamage(int dmg) {
+        if (shieldActive) {
+            shieldHP -= dmg;
+
+            if (shieldHP <= 0) {
+                shieldHP = 0;
+                shieldActive = false;
+            }
+            return;
+        }
+
         health -= dmg;
     }
+
 
     public void heal(int amount) {
         health = Math.min(health + amount, 100);
@@ -79,6 +105,11 @@ public class Player {
 
     public void draw(Graphics2D g2) {
         g2.drawImage(plane, x, y, width + 20, height + 20, null);
+
+        if (shieldActive) {
+            g2.drawImage(shield, x , y, width + 20, height + 20, null);
+        }
+
     }
 
     public Rectangle getBounds() {

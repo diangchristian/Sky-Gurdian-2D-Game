@@ -36,6 +36,10 @@ public class HealthPickup extends Pickup {
         }
     }
 
+    public String getEffectText() {
+        return "+HP";
+    }
+
     @Override
     public void applyEffect(Player player) {
         player.heal(healAmount); // ensure your Player class has a heal method

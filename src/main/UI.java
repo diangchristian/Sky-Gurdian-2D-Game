@@ -3,6 +3,7 @@ package main;
 import entity.Player;
 
 import java.awt.*;
+import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
 import java.io.IOException;
@@ -15,8 +16,13 @@ public class UI {
 
     private GamePanel gp;
     private GameWorld gw;
-    private Font orbitronRegular;
-    private Font orbitronBold;
+    public Font orbitronRegular;
+    public Font orbitronBold;
+
+    private float glowAlpha = 0.6f;
+    private float glowDir = 0.01f;
+    private float bossPulseAlpha = 0f;
+    private boolean bossPulseIncreasing = true;
 
     private Font titleFont;
     private Font normalFont;
@@ -29,12 +35,14 @@ public class UI {
     public UIButton startButton;
     private float titleScale = 1.0f;
     private float scaleDir = 0.005f;
-
+    int titleY = 140;
     // Fade transition
     private boolean isTransitioning = false;
     private boolean fadeOut = true;
     private int fadeAlpha = 0;
     private final int FADE_SPEED = 10;
+
+//    private Color aboutBgColor = new Color(20, 30, 40, 160);
 
     // TUTORIAL
 
@@ -45,6 +53,15 @@ public class UI {
     private final int TUTORIAL_PADDING = 20;
     private Font tutorialFont;
     private Color tutorialBgColor = new Color(0, 0, 0, 180); // semi-transparent black
+
+    // ABOUT GAME
+    private String aboutText = "Sky Guardian is an arcade-style shooting game.\n" +
+            "Survive waves of enemies and defeat bosses.\n" +
+            "Collect pickups to upgrade your plane and stay alive!\n" +
+            "Use WASD / Arrow Keys to move, SPACE to shoot.";
+    private String[] aboutLines = null;
+    private final int ABOUT_PADDING = 20;
+    private Color aboutBgColor = new Color(0, 0, 0, 180); // semi-transparent black
 
 
     // GET READY & Tutorial
@@ -61,6 +78,7 @@ public class UI {
         titleFont = orbitronBold;
         normalFont = orbitronRegular;
         buttonFont = orbitronBold.deriveFont(28f);
+        prepareAboutText();
 
         startButton = new UIButton(
                 gp.WIDTH / 2 - 120,
@@ -70,6 +88,8 @@ public class UI {
                 "START GAME",
                 buttonFont
         );
+
+
     }
 
     private void loadImages() {
@@ -122,6 +142,10 @@ public class UI {
         exitButton = new UIButton(gp.WIDTH / 2 - 50, gp.HEIGHT / 2 + 50, 100, 100, "", null);
     }
 
+    private void prepareAboutText() {
+        aboutLines = aboutText.split("\n");
+    }
+
     // -------------------- DRAW --------------------
     public void draw(Graphics2D g2) {
         switch (gp.gameState) {
@@ -134,10 +158,12 @@ public class UI {
             case GAME_OVER -> drawGameOver(g2);
             case PAUSED -> drawPauseOverlay(g2);
         }
-
         drawTutorial(g2);
         drawGetReady(g2);
         drawFade(g2);
+        drawBossPulseTop(g2);
+
+//        drawBossPulseCorners(g2);
     }
 
 
@@ -146,22 +172,34 @@ public class UI {
     }
 
     private void drawMenu(Graphics2D g2) {
+        // Draw background
         g2.drawImage(menuBg, 0, 0, gp.WIDTH, gp.HEIGHT, null);
 
-        // Game title
-        drawCenteredTextBottom(
-                g2,
-                "Sky Guardian",
-                titleFont,
-                Color.WHITE,
-                new Color(0, 0, 0, 0),
-                140
-        );
+        // ---------------- Title ----------------
+        int titleY = 140;
+        g2.setFont(titleFont);
+
+        FontMetrics fm = g2.getFontMetrics();
+        int titleX = (gp.WIDTH - fm.stringWidth("Sky Guardian")) / 2;
+
+// Glow
+        g2.setColor(new Color(100, 200, 255, (int)(255 * glowAlpha)));
+        g2.drawString("Sky Guardian", titleX + 2, titleY + 2);
+
+// Main text
+        g2.setColor(Color.WHITE);
+        g2.drawString("Sky Guardian", titleX, titleY);
 
 
-        // Start button
+        // ---------------- About Panel ----------------
+        drawAboutPanel(g2, titleY + 60); // start a bit below the title
+
+        // ---------------- Start Button ----------------
+        startButton.y = gp.HEIGHT - 100; // fixed position from bottom
         startButton.draw(g2);
+        drawVignette(g2);
     }
+
 
 
     private void drawGetReady(Graphics2D g2) {
@@ -209,6 +247,40 @@ public class UI {
             textY += lineHeight;
         }
     }
+
+
+
+
+    private void drawAboutPanel(Graphics2D g2, int panelStartY) {
+        if (aboutLines == null || aboutLines.length == 0) return;
+
+        g2.setFont(tutorialFont);
+
+        // calculate panel width
+        int panelWidth = 0;
+        int lineHeight = g2.getFontMetrics().getHeight();
+        for (String line : aboutLines) {
+            panelWidth = Math.max(panelWidth, g2.getFontMetrics().stringWidth(line));
+        }
+        panelWidth += ABOUT_PADDING * 2;
+        int panelHeight = lineHeight * aboutLines.length + ABOUT_PADDING * 2;
+
+        int panelX = (gp.WIDTH - panelWidth) / 2;
+        int panelY = panelStartY;
+
+        // draw semi-transparent background
+        g2.setColor(aboutBgColor);
+        g2.fillRoundRect(panelX, panelY, panelWidth, panelHeight, 20, 20);
+
+        // draw each line
+        g2.setColor(Color.WHITE);
+        int textY = panelY + ABOUT_PADDING + lineHeight - 4;
+        for (String line : aboutLines) {
+            g2.drawString(line, panelX + ABOUT_PADDING, textY);
+            textY += lineHeight;
+        }
+    }
+
 
 
 
@@ -276,9 +348,66 @@ public class UI {
         tutorialLines = tutorialText.split("\n"); // split lines
     }
 
+    private float bossPulseTime = 0f;
+
+    public void updateBossPulse(boolean bossActive) {
+        if (!bossActive) {
+            bossPulseAlpha = 0f;
+            bossPulseTime = 0f;
+            return;
+        }
+
+        bossPulseTime += 0.05f; // adjust speed if needed
+        bossPulseAlpha = 0.05f + 0.2f * (float)(Math.sin(bossPulseTime) * 0.5 + 0.5);
+        // alpha smoothly oscillates between 0.05 and 0.25
+    }
+
+
+    private void drawBossPulseTop(Graphics2D g2) {
+        if (bossPulseAlpha <= 0) return;
+
+        int width = gp.WIDTH;
+        int height = gp.HEIGHT;
+
+        // Center slightly above screen for top glow
+        Point2D center = new Point2D.Float(width / 2f, -height * 0.25f);
+
+        // Radius large enough to cover top of screen and fade naturally
+        float radius = width * 0.9f;
+
+        // Smooth gradient: red at center, transparent at edges
+        float[] dist = {0f, 1f};
+        Color[] colors = {
+                new Color(255, 0, 0, (int)(bossPulseAlpha * 255)),
+                new Color(255, 0, 0, 0)
+        };
+
+        RadialGradientPaint gradient = new RadialGradientPaint(center, radius, dist, colors,
+                MultipleGradientPaint.CycleMethod.NO_CYCLE);
+
+        Paint old = g2.getPaint();
+        g2.setPaint(gradient);
+
+        // Fill the whole screen; gradient will fade naturally
+        g2.fillRect(0, 0, width, height);
+
+        g2.setPaint(old);
+    }
+
+
+
+
+
+
 
     // -------------------- UPDATE --------------------
     public void update() {
+
+        glowAlpha += glowDir;
+        if (glowAlpha > 0.9f || glowAlpha < 0.4f) glowDir *= -1;
+
+
+
         if (gp.gameState == GameState.MENU) {
             titleScale += scaleDir;
             if (titleScale > 1.05f || titleScale < 0.95f) scaleDir *= -1;
@@ -306,6 +435,24 @@ public class UI {
             }
         }
     }
+
+    private void drawVignette(Graphics2D g2) {
+        RadialGradientPaint vignette = new RadialGradientPaint(
+                new Point(gp.WIDTH / 2, gp.HEIGHT / 2),
+                gp.WIDTH,
+                new float[]{0.6f, 1f},
+                new Color[]{
+                        new Color(0, 0, 0, 0),
+                        new Color(0, 0, 0, 180)
+                }
+        );
+
+        Paint old = g2.getPaint();
+        g2.setPaint(vignette);
+        g2.fillRect(0, 0, gp.WIDTH, gp.HEIGHT);
+        g2.setPaint(old);
+    }
+
 
     public void startFadeToGame() {
         isTransitioning = true;

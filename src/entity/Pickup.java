@@ -9,6 +9,7 @@ public abstract class Pickup {
     protected int width = 32, height = 32;
     protected int speed = 2;
 
+
     public void update() {
         y += speed;
     }
@@ -27,4 +28,12 @@ public abstract class Pickup {
     }
 
     public abstract void applyEffect(Player player);
+
+    public abstract String getEffectText();
+
+    public int getX() { return x; }
+    public int getY() { return y; }
+    public int getWidth() { return width; }
+    public int getHeight() { return height; }
+
 }
